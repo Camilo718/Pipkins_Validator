@@ -1,13 +1,10 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function WeekSelector() {
-
-    return (
-
-        <div className="flex items-center gap-6">
-
-            <button
-                className="
+  return (
+    <div className="flex items-center gap-6">
+      <button
+        className="
                     flex
                     h-11
                     w-11
@@ -18,28 +15,20 @@ export default function WeekSelector() {
                     transition
                     hover:bg-slate-200
                 "
-            >
-                <ChevronLeft size={18} />
-            </button>
+      >
+        <ChevronLeft size={18} />
+      </button>
 
-            <div>
+      <div>
+        <p className="text-xs uppercase tracking-wider text-slate-400">
+          Semana
+        </p>
 
-                <p className="text-xs uppercase tracking-wider text-slate-400">
+        <h2 className="text-xl font-semibold">14 Jul - 20 Jul</h2>
+      </div>
 
-                    Semana
-
-                </p>
-
-                <h2 className="text-xl font-semibold">
-
-                    14 Jul - 20 Jul
-
-                </h2>
-
-            </div>
-
-            <button
-                className="
+      <button
+        className="
                     flex
                     h-11
                     w-11
@@ -50,12 +39,9 @@ export default function WeekSelector() {
                     transition
                     hover:bg-slate-200
                 "
-            >
-                <ChevronRight size={18}/>
-            </button>
-
-        </div>
-
-    );
-
+      >
+        <ChevronRight size={18} />
+      </button>
+    </div>
+  );
 }

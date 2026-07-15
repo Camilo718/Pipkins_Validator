@@ -1,16 +1,11 @@
 export default function Card({
+  children,
 
-    children,
-
-    className = ""
-
+  className = '',
 }) {
-
-    return (
-
-        <div
-
-            className={`
+  return (
+    <div
+      className={`
                 rounded-[28px]
                 border
                 border-white/60
@@ -19,13 +14,8 @@ export default function Card({
                 shadow-[0_20px_60px_rgba(15,23,42,.08)]
                 ${className}
             `}
-
-        >
-
-            {children}
-
-        </div>
-
-    );
-
+    >
+      {children}
+    </div>
+  );
 }

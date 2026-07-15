@@ -1,21 +1,19 @@
 const days = [
-    "Agente",
-    "Lun",
-    "Mar",
-    "Mié",
-    "Jue",
-    "Vie",
-    "Sáb",
-    "Dom",
-    "Match"
+  'Agente',
+  'Lun',
+  'Mar',
+  'Mié',
+  'Jue',
+  'Vie',
+  'Sáb',
+  'Dom',
+  'Match',
 ];
 
 export default function ScheduleHeader() {
-
-    return (
-
-        <div
-            className="
+  return (
+    <div
+      className="
                 grid
                 grid-cols-[260px_repeat(7,1fr)_80px]
                 gap-4
@@ -25,16 +23,10 @@ export default function ScheduleHeader() {
                 font-semibold
                 text-slate-500
             "
-        >
-
-            {days.map(day => (
-                <div key={day}>
-                    {day}
-                </div>
-            ))}
-
-        </div>
-
-    );
-
+    >
+      {days.map((day) => (
+        <div key={day}>{day}</div>
+      ))}
+    </div>
+  );
 }
