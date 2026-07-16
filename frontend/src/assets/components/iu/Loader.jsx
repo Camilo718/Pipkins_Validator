@@ -1,7 +1,7 @@
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle } from 'lucide-react';
 
 export default function Loader({
-  text = "Cargando...",
+  text = 'Cargando...',
   size = 26,
   fullScreen = false,
 }) {

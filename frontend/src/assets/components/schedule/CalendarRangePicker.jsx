@@ -21,7 +21,7 @@ export default function CalendarRangePicker({ value, onChange }) {
   return (
     <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
-        <Calendar size={20} className="text-indigo-600" />
+        <Calendar size={20} className="text-indigo-900" />
         <h3 className="text-lg font-semibold text-slate-800">
           Rango de fechas
         </h3>
