@@ -2,7 +2,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import MatchBadge from './MatchBadge';
 import ScheduleCell from './ScheduleCell';
 
-export default function ScheduleRow({ agent }) {
+export default function ScheduleRow({ agent, onEdit }) {
   return (
     <div
       className="
@@ -64,6 +64,7 @@ export default function ScheduleRow({ agent }) {
           <Pencil
             size={16}
             className="cursor-pointer text-slate-500 hover:text-indigo-600"
+            onClick={onEdit}
           />
 
           <Trash2

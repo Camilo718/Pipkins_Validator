@@ -1,4 +1,4 @@
-export const agents = [
+export const initialAgents = [
   {
     id: 1,
     name: 'Carlos Rodríguez',
