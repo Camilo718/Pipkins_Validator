@@ -37,19 +37,21 @@ class AgentService:
         """Obtiene un agente por employee_id"""
         return self.db.query(Agent).filter(Agent.employee_id == employee_id).first()
     
-    def update_agent(self, agent_id: str, full_name: str = None, position: str = None) -> Optional[Agent]:
-        """Actualiza un agente"""
-        agent = self.get_agent_by_id(agent_id)
-        if not agent:
-            return None
+    def update_agent(self, agent_id: str, full_name: str, position: str):
+        """Actualiza un agente y GUARDA los cambios en la base de datos"""
+        agent = self.db.query(Agent).filter(Agent.id == agent_id).first()
         
-        if full_name:
-            agent.full_name = full_name
-        if position:
-            agent.position = position
+        if agent:
+            # 2. Actualizar los valores en memoria
+            if full_name is not None:
+                agent.full_name = full_name
+            if position is not None:
+                agent.position = position
+            
+            self.db.commit()
+            
+            self.db.refresh(agent)
         
-        self.db.commit()
-        self.db.refresh(agent)
         return agent
     
     def delete_agent(self, agent_id: str) -> bool:

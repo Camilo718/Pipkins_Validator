@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Float, JSON, UniqueConstraint
+from sqlalchemy import Column, String, DateTime, Float, JSON, UniqueConstraint, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.config.database import Base
@@ -8,7 +8,10 @@ class Attendance(Base):
     __tablename__ = "attendances"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
-    agent_id = Column(String(36), index=True, nullable=False)
+    
+    # AGREGAR ForeignKey aquí:
+    agent_id = Column(String(36), ForeignKey('agents.id'), index=True, nullable=False)
+    
     date = Column(DateTime(timezone=True), nullable=False)
     
     scheduled_in = Column(DateTime(timezone=True), nullable=True)

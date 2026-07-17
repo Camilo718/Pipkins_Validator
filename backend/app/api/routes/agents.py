@@ -1,29 +1,49 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.api.dependencies import get_db
 from app.services.agent_service import AgentService
 from app.schemas.agent import AgentCreate, AgentUpdate, AgentResponse
+from app.models.agent import Agent
 from typing import List
 
 router = APIRouter(prefix="/agents", tags=["Agents"])
 
 @router.get("/", response_model=List[dict])
 def get_all_agents(db: Session = Depends(get_db)):
-    """Obtiene todos los agentes"""
-    service = AgentService(db)
-    agents = service.get_all_agents()
+    """Obtiene todos los agentes CON sus horarios"""
+    # Cargar agentes con sus horarios (joinedload hace un JOIN automático)
+    agents = db.query(Agent).options(
+        joinedload(Agent.schedules)
+    ).all()
     
-    return [
-        {
+    result = []
+    for agent in agents:
+        # Buscar el horario activo (el que tenga el rango de fechas más largo o el más reciente)
+        default_schedule = None
+        if agent.schedules:
+            # Ordenar por fecha de inicio (el más reciente primero)
+            sorted_schedules = sorted(agent.schedules, key=lambda s: s.week_start, reverse=True)
+            default_schedule = sorted_schedules[0]
+        
+        result.append({
             "id": agent.id,
             "employee_id": agent.employee_id,
             "full_name": agent.full_name,
             "position": agent.position,
             "created_at": agent.created_at,
-            "updated_at": agent.updated_at
-        }
-        for agent in agents
-    ]
+            "updated_at": agent.updated_at,
+            "schedule": {
+                "monday": default_schedule.monday if default_schedule else None,
+                "tuesday": default_schedule.tuesday if default_schedule else None,
+                "wednesday": default_schedule.wednesday if default_schedule else None,
+                "thursday": default_schedule.thursday if default_schedule else None,
+                "friday": default_schedule.friday if default_schedule else None,
+                "saturday": default_schedule.saturday if default_schedule else None,
+                "sunday": default_schedule.sunday if default_schedule else None,
+            } if default_schedule else None
+        })
+    
+    return result
 
 @router.post("/", response_model=dict)
 def create_agent(agent: AgentCreate, db: Session = Depends(get_db)):

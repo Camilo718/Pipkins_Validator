@@ -1,5 +1,5 @@
-import { CalendarDays, Upload, Plus } from 'lucide-react';
-
+import { CalendarDays, Upload, Plus, BarChart3, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Button from '../../components/iu/Button';
 
 export default function Header() {
@@ -8,18 +8,23 @@ export default function Header() {
       <div className="mx-auto flex h-20 max-w-[1700px] items-center justify-between px-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Agent Scheduler</h1>
-          <p className="text-sm text-slate-500">Gestión semanal de agentes</p>
+          <p className="text-sm text-slate-500">Weekly agent management</p>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="secondary" icon={<CalendarDays size={18} />}>
-            Semana Actual
-          </Button>
+          
+          <Link to="/">
+            <Button variant="secondary" icon={<Home size={18} />}>
+              Home
+            </Button>
+          </Link>
+          
+          <Link to="/comparison">
+            <Button variant="secondary" icon={<BarChart3 size={18} />}>
+              Comparison
+            </Button>
+          </Link>
 
-          <Button variant="secondary" icon={<Upload size={18} />}>
-            Importar Excel
-          </Button>
-
-          <Button icon={<Plus size={18} />}>Agregar Agente</Button>
+          <Button icon={<Plus size={18} />}>Add Agent</Button>
         </div>
       </div>
     </header>

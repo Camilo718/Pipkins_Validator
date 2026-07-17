@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.api.dependencies import get_db
 from app.models.discrepancy import Discrepancy
 from app.models.attendance import Attendance
+from app.models.agent import Agent
 from datetime import datetime
 from typing import Optional
 
@@ -16,14 +18,6 @@ def get_discrepancies(
     discrepancy_type: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """
-    Obtiene todas las discrepancias con filtros opcionales
-    
-    - **agent_id**: Filtrar por agente
-    - **start_date**: Fecha de inicio
-    - **end_date**: Fecha de fin
-    - **discrepancy_type**: Tipo de discrepancia (LATE_ARRIVAL, EARLY_DEPARTURE, etc.)
-    """
     try:
         query = db.query(Discrepancy)
         
@@ -64,47 +58,49 @@ def get_summary_report(
     end_date: str,
     db: Session = Depends(get_db)
 ):
-    """
-    Obtiene un reporte resumen del período
-    """
     try:
-        from app.models.agent import Agent
-        
         start = datetime.fromisoformat(start_date)
         end = datetime.fromisoformat(end_date)
         
         # Total de agentes
         total_agents = db.query(Agent).count()
         
-        # Total de asistencias
+        # Total de asistencias en el período
         total_attendances = db.query(Attendance).filter(
             Attendance.date >= start,
             Attendance.date <= end
         ).count()
         
-        # Total de discrepancias
+        # Total de discrepancias en el período
         total_discrepancies = db.query(Discrepancy).filter(
             Discrepancy.date >= start,
             Discrepancy.date <= end
         ).count()
         
-        # Discrepancias por tipo
-        discrepancies_by_type = db.query(
+        # Discrepancias por tipo (usando indexación segura para tuplas)
+        discrepancies_by_type_query = db.query(
             Discrepancy.type,
-            db.func.count(Discrepancy.id).label('count')
+            func.count(Discrepancy.id).label('count')
         ).filter(
             Discrepancy.date >= start,
             Discrepancy.date <= end
         ).group_by(Discrepancy.type).all()
         
+        discrepancies_by_type = [
+            {"type": row[0], "count": row[1]} 
+            for row in discrepancies_by_type_query
+        ]
+        
         # Total minutos de retraso
-        total_late_minutes = db.query(
-            db.func.sum(Discrepancy.minutes)
+        total_late_minutes_result = db.query(
+            func.sum(Discrepancy.minutes)
         ).filter(
             Discrepancy.type == "LATE_ARRIVAL",
             Discrepancy.date >= start,
             Discrepancy.date <= end
-        ).scalar() or 0
+        ).scalar()
+        
+        total_late_minutes = int(total_late_minutes_result) if total_late_minutes_result else 0
         
         return {
             "period": {
@@ -117,12 +113,11 @@ def get_summary_report(
                 "total_discrepancies": total_discrepancies,
                 "total_late_minutes": total_late_minutes
             },
-            "discrepancies_by_type": [
-                {"type": d.type, "count": d.count}
-                for d in discrepancies_by_type
-            ]
+            "discrepancies_by_type": discrepancies_by_type
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Formato de fecha inválido: {str(e)}")
     except Exception as e:
+        # Esto nos dirá exactamente qué falla si vuelve a ocurrir
+        print(f"ERROR EN REPORTES: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

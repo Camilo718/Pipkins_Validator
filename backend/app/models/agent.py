@@ -7,7 +7,6 @@ import uuid
 class Agent(Base):
     __tablename__ = "agents"
     
-    # MySQL requiere longitud en String. Usamos 36 para UUID
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     employee_id = Column(String(50), unique=True, index=True, nullable=False)
     full_name = Column(String(255), nullable=False)

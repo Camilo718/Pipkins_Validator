@@ -22,76 +22,147 @@ class ExcelParserService:
         records = []
         current_employee_id = ""
         current_name = ""
+        header_row_found = False
         
-        # Saltar las primeras 5 filas (headers)
-        for row_idx, row in enumerate(ws.iter_rows(min_row=6, values_only=True), start=6):
-            if not row or not row[0]:
+        for row in ws.iter_rows(values_only=True):
+            if not row:
                 continue
             
-            cell_value = str(row[0]).strip() if row[0] else ""
+            cells = [str(cell).strip() if cell is not None else "" for cell in row]
             
-            # Detectar nuevo empleado (formato: "LastName, FirstName")
-            if ',' in cell_value and row[1]:
-                parts = cell_value.split(',')
-                current_employee_id = parts[0].strip()
-                current_name = cell_value.strip()
+            if "Agent:" in cells[0] and "Date" in cells[1]:
+                header_row_found = True
+                continue
             
-            # Procesar filas de asistencia
-            if row[1] and self._is_valid_date(row[1]):
-                date = self._parse_date(row[1])
-                clock_in = str(row[2]).strip() if row[2] else "--"
-                clock_out = str(row[3]).strip() if row[3] else "--"
-                paid_duration = str(row[4]).strip() if row[4] else "00:00:00"
+            if not header_row_found:
+                continue
+            
+            if cells[0] and ',' in cells[0] and cells[1]:
+                current_name = cells[0]
+                current_employee_id = current_name
+            
+            if not current_name:
+                continue
+            
+            if cells[1] and self._is_valid_date(cells[1]):
+                date = self._parse_date(cells[1])
+                clock_in = cells[2] if cells[2] else "--"
+                clock_out = cells[3] if cells[3] else "--"
+                paid_duration = cells[4] if cells[4] else "00:00:00"
                 
-                # Solo agregar si hay clock in y clock out válidos
-                if clock_in != "--" and clock_out != "--" and clock_in and clock_out:
-                    records.append(AttendanceRecord(
-                        employee_id=current_employee_id,
-                        full_name=current_name,
-                        date=date,
-                        clock_in=clock_in,
-                        clock_out=clock_out,
-                        paid_duration=paid_duration
-                    ))
-            
-            # Detener en "Daily Total" o "Agent Total"
-            if "Daily Total" in cell_value or "Agent Total" in cell_value:
-                break
+                if "Daily Total" in cells[1] or "Agent Total" in cells[1]:
+                    break
+                
+                # ✅ CONVERTIR HORAS AM/PM A FORMATO 24H ANTES DE GUARDAR
+                clock_in_24h = self._convert_to_24h(clock_in)
+                clock_out_24h = self._convert_to_24h(clock_out)
+                
+                records.append(AttendanceRecord(
+                    employee_id=current_employee_id,
+                    full_name=current_name,
+                    date=date,
+                    clock_in=clock_in_24h,
+                    clock_out=clock_out_24h,
+                    paid_duration=paid_duration
+                ))
         
         wb.close()
         return records
     
+    def _convert_to_24h(self, time_str: str) -> str:
+        """Convierte 05:00:00PM a 17:00:00 y 07:00:00AM a 07:00:00"""
+        if time_str == "--" or not time_str:
+            return "--"
+        
+        time_str = str(time_str).strip().upper()
+        
+        # Si ya está en formato 24h, devolver tal cual
+        if "AM" not in time_str and "PM" not in time_str:
+            return time_str
+        
+        is_pm = "PM" in time_str
+        time_part = time_str.replace("AM", "").replace("PM", "").strip()
+        parts = time_part.split(":")
+        
+        if len(parts) < 2:
+            return time_str
+        
+        try:
+            hour = int(parts[0])
+            minute = int(parts[1]) if len(parts) > 1 else 0
+            second = int(parts[2]) if len(parts) > 2 else 0
+            
+            # Convertir a 24h
+            if is_pm and hour != 12:
+                hour += 12
+            elif not is_pm and hour == 12:
+                hour = 0
+            
+            return f"{hour:02d}:{minute:02d}:{second:02d}"
+        except:
+            return time_str
+    
     def _is_valid_date(self, value) -> bool:
-        """Verifica si el valor es una fecha válida"""
         if isinstance(value, datetime):
             return True
-        try:
-            datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S")
-            return True
-        except:
-            return False
+        
+        value_str = str(value).strip()
+        formats = [
+            "%m-%d-%Y",
+            "%m/%d/%Y",
+            "%Y-%m-%d",
+            "%m-%d-%Y %H:%M:%S",
+            "%m/%d/%Y %H:%M:%S",
+        ]
+        
+        for fmt in formats:
+            try:
+                datetime.strptime(value_str, fmt)
+                return True
+            except:
+                continue
+        
+        return False
     
     def _parse_date(self, value) -> datetime:
-        """Parsea una fecha desde Excel"""
         if isinstance(value, datetime):
             return value
-        return datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S")
+        
+        value_str = str(value).strip()
+        formats = [
+            "%m-%d-%Y",
+            "%m/%d/%Y",
+            "%Y-%m-%d",
+            "%m-%d-%Y %H:%M:%S",
+            "%m/%d/%Y %H:%M:%S",
+        ]
+        
+        for fmt in formats:
+            try:
+                return datetime.strptime(value_str, fmt)
+            except:
+                continue
+        
+        raise ValueError(f"No se pudo parsear la fecha: {value_str}")
     
     def parse_time(self, time_str: str) -> Dict[str, int]:
-        """Parsea un string de tiempo HH:MM:SS"""
+        """Parsea un string de tiempo HH:MM:SS (ya en formato 24h)"""
         if time_str == "--" or not time_str:
             return None
         
         parts = str(time_str).split(":")
         if len(parts) >= 2:
-            return {
-                "hours": int(parts[0]),
-                "minutes": int(parts[1])
-            }
+            try:
+                return {
+                    "hours": int(parts[0]),
+                    "minutes": int(parts[1]),
+                    "seconds": int(parts[2]) if len(parts) > 2 else 0
+                }
+            except:
+                return None
         return None
     
     def parse_duration_to_hours(self, duration: str) -> float:
-        """Convierte HH:MM:SS a horas decimales"""
         if not duration or duration == "--":
             return 0.0
         

@@ -11,15 +11,16 @@ ENV/
 dist/
 build/
 
-# Environment
-.env
-*.env.local
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# Frontend
+
+node_modules/
 
 # OS
 .DS_Store
